@@ -1,0 +1,5 @@
+package cache
+
+Cache :: struct {	
+	
+}
