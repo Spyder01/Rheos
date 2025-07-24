@@ -53,17 +53,6 @@ The Rheos server uses a custom binary protocol for all communication. You can fi
 
 ---
 
-## Development
-
-The project uses a modular internal architecture with packages such as:
-
-* `core:net` – Socket abstractions
-* `core:flags` – Command-line argument parsing
-* `pkg/daemon` – Encapsulates server loop and socket handling
-* `core:encoding/*` – Endian-safe parsing and UUID handling
-
----
-
 ## Status
 
 ✅ **Implemented:**
@@ -75,7 +64,10 @@ The project uses a modular internal architecture with packages such as:
 
 🛠️ **Work in Progress:**
 
+* Checksum for protocol
 * In-memory topic registry
+* Pull based event publication
+* UDP Support
 * Brokered message dispatching
 * Client ID management and persistence
 * Fault tolerance
