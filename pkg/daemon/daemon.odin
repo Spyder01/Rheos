@@ -73,6 +73,7 @@ DaemonError :: union {
 	net.Accept_Error,
 	net.TCP_Send_Error,
 	topic.TopicDataError,
+	protocol.RESPONSE_PROTOCOL_ERROR
 }
 
 start :: proc(daemon: ^Daemon) -> net.Network_Error {

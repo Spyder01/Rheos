@@ -118,9 +118,13 @@ publish_topic :: proc(connection: ^DaemonConnection) -> DaemonError {
 	packet := connection.packet	
 	daemon := connection.daemon
 	topic_manager := daemon.topic_manager
-
+	
+	sender_id := connection.packet.client_id
 	topic_name := topic.get_event_name(packet.data) or_return
 	clients := topic.get_clients(topic_manager, topic_name) or_return
+	data := topic.get_data(packet.data) or_return
+
+	res_data := protocol.create_response_protocol(sender_id, data) or_return
 
 	for client in clients {
 		if client == connection.packet.client_id {
@@ -128,10 +132,8 @@ publish_topic :: proc(connection: ^DaemonConnection) -> DaemonError {
 		}
 
 		client_connection := daemon.connections[client]
-		data := topic.get_data(packet.data) or_return
-
 		
-	_ = net.send_tcp(client_connection.client, data[:]) or_return
+		_ = net.send_tcp(client_connection.client, res_data[:]) or_return
 
 	}
 	
