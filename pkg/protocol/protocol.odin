@@ -1,6 +1,7 @@
 package protocol
 
 import "core:encoding/endian"
+import "core:hash"
 import "core:net"
 import "core:fmt"
 
@@ -55,6 +56,17 @@ get_content_length :: proc(header: []u8) -> (u32, PROTOCOL_ERROR) {
 	}
 
 	return length, PROTOCOL_ERROR.NONE
+}
+
+verify_checksum :: proc(packet_raw: []u8, content_len: u32) -> bool {
+	raw_checksum, checksum_parsing_err := endian.get_u32(packet_raw[RHEOS_HEADER_SIZE + cast(int)content_len:(RHEOS_HEADER_SIZE + cast(int)content_len + 4)], .Little)
+	if !checksum_parsing_err {
+		return false
+	}
+
+	computed_checksum := hash.crc32(packet_raw[:(RHEOS_HEADER_SIZE + cast(int)content_len)])
+	
+	return raw_checksum == computed_checksum
 }
 
 get_opcode :: proc(opcode_raw: u8) -> OP_CODE {

@@ -6,6 +6,7 @@ import "core:os"
 import "core:flags"
 
 import "pkg/daemon"
+import client "rheos-client"
 
 /*main :: proc () {
 	_daemon, _	:= daemon.new_daemon(net.Endpoint{
@@ -27,6 +28,7 @@ Config :: struct {
 }
 
 main :: proc () {
+	client.hi()
 	config := Config{}
 
 	err := flags.parse(&config, os.args[1:])
@@ -50,6 +52,7 @@ main :: proc () {
 	if err_ != net.Create_Socket_Error.None || err != nil {
 		fmt.printf("Error occured while creating server: %s", err_)
 	}
+
 	
 }
 

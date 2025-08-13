@@ -20,48 +20,78 @@ get_event_name :: proc(data: []u8) -> ([]u8, TopicDataError) {
 	if len(data) < 2 {
 		return []u8{}, .CORRUPTED_TOPIC
 	}
-
-	event_name_length, ok := endian.get_u16(data[0:2], .Little)
+	
+	offset := 0
+	event_name_length, ok := endian.get_u16(data[offset:offset + 2], .Little)
 	if !ok {
 		return []u8{}, .CORRUPTED_TOPIC
 	}
+	offset += 2
 
-	if cast(u16)len(data) < event_name_length + 2 {
+	// Shifting offset to after data length (4 bytes)
+	offset += 4
+
+	if len(data) < int(event_name_length + 2) {
 		return []u8{}, .CORRUPTED_TOPIC
 	}
 
-	buffer := make([]u8, event_name_length)
-	buffer = data[2:event_name_length +2]
-
-	return buffer, nil
+	return data[offset:offset +cast(int)event_name_length], nil
 }
 
-
 get_data :: proc(data: []u8) -> ([]u8, TopicDataError) {
-	if len(data) < 2{
-		return []u8{}, .CORRUPTED_TOPIC
-	}
-	
-	event_name_length, res_ok := endian.get_u16(data[0:2], .Little)
-	if !res_ok {
-		return []u8{}, .CORRUPTED_TOPIC
-	}
+    if len(data) < 6 { // 2 for event_name_length, 4 for data_len
+        return []u8{}, .CORRUPTED_TOPIC
+    }
+    
+    offset := 0
+    event_name_length, ok := endian.get_u16(data[offset:offset+2], .Little)
+    if !ok {
+        return []u8{}, .CORRUPTED_TOPIC
+    }
+    offset += 2
 
+    data_len, data_len_ok := endian.get_u32(data[offset:offset+4], .Little)
+    if !data_len_ok {
+        return []u8{}, .CORRUPTED_TOPIC
+    }
+    offset += 4
 
-	if cast(u16)len(data) < event_name_length + 2 {
-		return []u8{}, .CORRUPTED_TOPIC
-	}
+    if len(data) < offset + int(event_name_length) + int(data_len) {
+        return []u8{}, .CORRUPTED_TOPIC
+    }
 
-	data_len, ok := endian.get_u16(data[event_name_length+2:event_name_length+4], .Little)
-	if !ok {
-		return []u8{}, .CORRUPTED_TOPIC
-	}
+    offset += cast(int)event_name_length
+    return data[offset:offset + cast(int)data_len], nil
+}
 
-	buffer := make([]u8, data_len)
-	buffer = data[event_name_length+4:event_name_length+data_len+6]
-	
-	
-	return buffer, nil
+parse_topic_payload :: proc(data: []u8) -> ([]u8, []u8, TopicDataError) {
+    if len(data) < 6 {
+        return []u8{}, []u8{}, .CORRUPTED_TOPIC
+    }
+
+    offset := 0
+    event_name_length, ok := endian.get_u16(data[offset:offset+2], .Little)
+    if !ok {
+        return []u8{}, []u8{}, .CORRUPTED_TOPIC
+    }
+    offset += 2
+
+    data_len, data_len_ok := endian.get_u32(data[offset:offset+4], .Little)
+    if !data_len_ok {
+        return []u8{}, []u8{}, .CORRUPTED_TOPIC
+    }
+    offset += 4
+
+    if len(data) < offset + int(event_name_length) + int(data_len) {
+        return []u8{}, []u8{}, .CORRUPTED_TOPIC
+    }
+
+    event_name := data[offset:offset+cast(int)event_name_length]
+    offset += cast(int)event_name_length
+
+    payload := data[offset:offset+cast(int)data_len]
+
+    return event_name, payload, nil
 }
 
 create_topic :: proc(parent: [16]u8, data: []u8) -> (Topic, TopicDataError) {

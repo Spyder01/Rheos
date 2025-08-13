@@ -81,7 +81,7 @@ handleConnection :: proc(connection: ^DaemonConnection) -> DaemonError {
 
 	packet_processing_err := process_packet(connection) 
 	
-	ack_packet := [18]u8{}
+	ack_packet := [22]u8{}
 	if packet_processing_err != nil {
 		ack_packet = protocol.create_ack_packet(connection.message_id, .FAILED)
 	} else {
@@ -98,17 +98,20 @@ process_packet :: proc(connection: ^DaemonConnection) -> DaemonError {
 	daemon := connection.daemon
 	topic_manager := daemon.topic_manager
 
-	#partial switch packet.operation {
-	 case  .CREATE:
-		_topic := topic.create_topic(packet.client_id, packet.data) or_return
-		topic.add_topic(topic_manager, &_topic) or_return
+	switch packet.operation {
+		case  .CREATE:
+			_topic := topic.create_topic(packet.client_id, packet.data) or_return
+			topic.add_topic(topic_manager, &_topic) or_return
 	
-	case .SUBSCRIBE:
-		topic_name := topic.get_event_name(packet.data) or_return
-		topic.subscribe_topic(topic_manager, topic_name, packet.client_id) or_return
-	
-	case .PUBLISH:
-		publish_topic(connection) or_return
+		case .SUBSCRIBE:
+			topic_name := topic.get_event_name(packet.data) or_return
+			topic.subscribe_topic(topic_manager, topic_name, packet.client_id) or_return
+		
+		case .PUBLISH:
+			publish_topic(connection) or_return
+		
+		case .INVALID_OPERATION:
+			return protocol.PROTOCOL_ERROR.INVALID_OPERATION
 	}
 
 	return nil
